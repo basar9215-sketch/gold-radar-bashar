@@ -15,7 +15,8 @@ background:#000;
 color:#fff;
 font-family:Tahoma;
 text-align:center;
-margin:0
+margin:0;
+padding:0
 }
 
 h1{
@@ -23,30 +24,21 @@ color:gold;
 margin-top:20px
 }
 
-.container{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:20px;
-padding:20px
-}
-
-.widget{
-border:1px solid #333;
-border-radius:10px;
-overflow:hidden;
-width:380px
-}
-
-.yemenPrice{
+.box{
 background:#111;
 border:1px solid #333;
-padding:15px;
-margin:15px auto;
-width:360px;
 border-radius:10px;
-font-size:20px;
-color:#FFD700
+padding:20px;
+margin:20px auto;
+width:90%;
+max-width:400px;
+font-size:20px
+}
+
+.price{
+font-size:28px;
+color:#00ffcc;
+margin-top:10px
 }
 
 </style>
@@ -55,114 +47,75 @@ color:#FFD700
 
 <body>
 
-<h1>🏆 تحليل الذهب / دولار لحظياً</h1>
+<h1>🏆 رادار الذهب المباشر</h1>
 
-<div class="yemenPrice">
-🇾🇪 سعر جرام الذهب عيار 21 باليمني  
-<div id="goldYER">جاري التحميل...</div>
+<div class="box">
+الأونصة (XAUUSD)
+<div class="price" id="ounce">...</div>
 </div>
 
-<div class="container">
-
-<!-- تحليل فني -->
-<div class="widget">
-
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-{
-"interval": "5m",
-"width": "100%",
-"height": "450",
-"symbol": "OANDA:XAUUSD",
-"showIntervalTabs": true,
-"displayMode": "single",
-"locale": "ar",
-"colorTheme": "dark"
-}
-</script>
-
+<div class="box">
+جرام 24
+<div class="price" id="g24">...</div>
 </div>
 
+<div class="box">
+جرام 21
+<div class="price" id="g21">...</div>
 </div>
 
-<!-- معلومات السعر -->
-<div class="widget">
-
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-{
-"symbol": "OANDA:XAUUSD",
-"width": "100%",
-"locale": "ar",
-"colorTheme": "dark"
-}
-</script>
-
+<div class="box">
+جرام 18
+<div class="price" id="g18">...</div>
 </div>
 
+<div class="box">
+جرام 21 بالريال اليمني
+<div class="price" id="yem21">...</div>
 </div>
 
-<!-- شارت مباشر -->
-<div class="widget">
-
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-{
-"symbol": "OANDA:XAUUSD",
-"width": "100%",
-"height": "450",
-"locale": "ar",
-"dateRange": "1D",
-"colorTheme": "dark"
-}
-</script>
-
-</div>
-
-</div>
-
+<div class="box">
+جرام 21 بالريال السعودي
+<div class="price" id="sar21">...</div>
 </div>
 
 <script>
 
-const API_KEY = "2cad562e57af449282b26db26e53403e"
-
-// سعر الصرف التقريبي
-const YER_RATE = 528
+const goldAPI = "https://api.gold-api.com/price/XAU";
 
 async function updateGold(){
 
-let url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`
+let res = await fetch(goldAPI);
+let data = await res.json();
 
-let res = await fetch(url)
+let ounce = data.price;
 
-let data = await res.json()
+let gram24 = ounce / 31.1035;
+let gram21 = gram24 * 0.875;
+let gram18 = gram24 * 0.75;
 
-let ounce = parseFloat(data.price)
+let usdToYem = 530;
+let usdToSar = 3.75;
 
-// تحويل الأونصة إلى جرام
-let gram24 = ounce / 31.1035
+document.getElementById("ounce").innerText = ounce.toFixed(2) + " $";
 
-// عيار 21
-let gram21 = gram24 * 0.875
+document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
 
-// بالريال اليمني
-let priceYER = gram21 * YER_RATE
+document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
 
-document.getElementById("goldYER").innerHTML =
-Math.round(priceYER).toLocaleString("ar-YE") + " ريال"
+document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
+
+document.getElementById("yem21").innerText =
+(gram21 * usdToYem).toFixed(0) + " ريال";
+
+document.getElementById("sar21").innerText =
+(gram21 * usdToSar).toFixed(2) + " ريال";
 
 }
 
-updateGold()
+updateGold();
 
-setInterval(updateGold,60000)
+setInterval(updateGold,10000);
 
 </script>
 
