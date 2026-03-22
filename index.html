@@ -3,117 +3,120 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رادار الذهب المباشر</title>
+<title>رادار الذهب</title>
+
 <style>
-body{
-  background:#000;
-  color:#fff;
-  font-family:Tahoma, sans-serif;
-  text-align:center;
-  margin:0;
-  padding:20px;
+body {
+    background:#000;
+    color:#fff;
+    font-family:Tahoma;
+    text-align:center;
+    margin:0;
+    padding:20px;
 }
-h1{color:gold;margin:10px 0 20px}
-.box{
-  background:#111;
-  border:1px solid #333;
-  border-radius:12px;
-  padding:18px;
-  margin:14px auto;
-  width:92%;
-  max-width:420px;
+
+h1 {
+    color:gold;
+    margin-bottom:20px;
 }
-.price{
-  font-size:28px;
-  color:#00e5c3;
-  margin-top:8px;
-  font-weight:bold;
+
+.box {
+    background:#111;
+    border:1px solid #333;
+    border-radius:12px;
+    padding:15px;
+    margin:10px auto;
+    max-width:350px;
 }
-.note{
-  color:#aaa;
-  font-size:14px;
+
+.price {
+    font-size:24px;
+    color:#00ff99;
+    margin-top:10px;
 }
-.warn{
-  color:#ffb84d;
+
+.note {
+    color:#aaa;
+    font-size:14px;
 }
 </style>
 </head>
+
 <body>
 
-<h1>🏆 رادار الذهب المباشر</h1>
+<h1>📊 رادار الذهب</h1>
 
 <div class="box">
-  الأونصة (XAUUSD)
-  <div class="price" id="ounce">جاري التحميل...</div>
+    الأونصة (XAUUSD)
+    <div class="price" id="ounce">...</div>
 </div>
 
 <div class="box">
-  جرام 24
-  <div class="price" id="g24">...</div>
+    جرام 24
+    <div class="price" id="g24">...</div>
 </div>
 
 <div class="box">
-  جرام 21
-  <div class="price" id="g21">...</div>
+    جرام 21
+    <div class="price" id="g21">...</div>
 </div>
 
 <div class="box">
-  جرام 18
-  <div class="price" id="g18">...</div>
+    جرام 18
+    <div class="price" id="g18">...</div>
 </div>
 
 <div class="box">
-  جرام 21 بالريال اليمني
-  <div class="price" id="yem21">...</div>
+    جرام 21 بالريال اليمني
+    <div class="price" id="yem21">...</div>
 </div>
 
 <div class="box">
-  جرام 21 بالريال السعودي
-  <div class="price" id="sar21">...</div>
+    جرام 21 بالريال السعودي
+    <div class="price" id="sar21">...</div>
 </div>
 
 <div class="box">
-  حالة التحديث
-  <div class="note" id="status">بدء التحميل...</div>
+    حالة التحديث
+    <div class="note" id="status">يتم التحديث...</div>
 </div>
 
 <script>
-const GOLD_API = "https://api.gold-api.com/price/XAU";
+// سعر ثابت (تقدر تعدله يدوي)
+let ounce = 2150;
+
+// أسعار التحويل
 const USD_TO_YEM = 530;
 const USD_TO_SAR = 3.75;
 
-function setValues(ounce){
-  const gram24 = ounce / 31.1035;
-  const gram21 = gram24 * 0.875;
-  const gram18 = gram24 * 0.75;
+function updatePrices(){
 
-  document.getElementById("ounce").innerText = ounce.toFixed(2) + " $";
-  document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
-  document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
-  document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
+    let gram24 = ounce / 31.1;
+    let gram21 = gram24 * 0.875;
+    let gram18 = gram24 * 0.75;
 
-  document.getElementById("yem21").innerText =
-    Math.round(gram21 * USD_TO_YEM) + " ريال";
+    document.getElementById("ounce").innerText = ounce + " $";
+    document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
+    document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
+    document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
 
-  document.getElementById("sar21").innerText =
-    (gram21 * USD_TO_SAR).toFixed(2) + " ريال";
+    document.getElementById("yem21").innerText =
+        Math.round(gram21 * USD_TO_YEM) + " ريال";
+
+    document.getElementById("sar21").innerText =
+        (gram21 * USD_TO_SAR).toFixed(2) + " ريال";
+
+    document.getElementById("status").innerText = "يعمل بدون إنترنت ✅";
 }
 
-async function updateGold(){
-  try{
-    const res = await fetch(GOLD_API);
-    const data = await res.json();
-    const ounce = data.price;
+// تحديث تلقائي كل 3 ثواني (اختياري)
+setInterval(()=>{
+    ounce += Math.random() * 2 - 1; // حركة وهمية للسعر
+    updatePrices();
+}, 3000);
 
-    setValues(ounce);
+updatePrices();
+</script>
 
-    document.getElementById("status").innerText = "تم التحديث";
-  }catch(e){
-    setValues(5150);
-    document.getElementById("status").innerText = "تعذر الاتصال - سعر تقريبي";
-  }
-}
-
-updateGold();
-setInterval(updateGold, 10000);
-  </script>
+</body>
+</html>
