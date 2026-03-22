@@ -91,47 +91,29 @@ function setValues(ounce){
   document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
   document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
   document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
-  document.getElementById("yem21").innerText = Math.round(gram21 * USD_TO_YEM).toLocaleString("ar-YE") + " ريال";
-  document.getElementById("sar21").innerText = (gram21 * USD_TO_SAR).toFixed(2) + " ريال";
+
+  document.getElementById("yem21").innerText =
+    Math.round(gram21 * USD_TO_YEM) + " ريال";
+
+  document.getElementById("sar21").innerText =
+    (gram21 * USD_TO_SAR).toFixed(2) + " ريال";
 }
 
 async function updateGold(){
-  const status = document.getElementById("status");
-  status.innerText = "جاري جلب السعر...";
-  status.className = "note";
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
-
   try{
-    const res = await fetch(GOLD_API, {
-      signal: controller.signal,
-      cache: "no-store"
-    });
-    clearTimeout(timer);
-
-    if(!res.ok) throw new Error("HTTP " + res.status);
-
+    const res = await fetch(GOLD_API);
     const data = await res.json();
-    const ounce = Number(data.price);
-
-    if(!isFinite(ounce)) throw new Error("bad price");
+    const ounce = data.price;
 
     setValues(ounce);
-    status.innerText = "تم التحديث بنجاح";
-    status.className = "note";
-  }catch(err){
-    // سعر احتياطي حتى لا تبقى الصفحة معلقة
-    const fallback = 5150;
-    setValues(fallback);
-    status.innerText = "تعذر جلب السعر المباشر، تم عرض سعر تقريبي";
-    status.className = "note warn";
+
+    document.getElementById("status").innerText = "تم التحديث";
+  }catch(e){
+    setValues(5150);
+    document.getElementById("status").innerText = "تعذر الاتصال - سعر تقريبي";
   }
 }
 
 updateGold();
 setInterval(updateGold, 10000);
-</script>
-
-</body>
-</html>
+  </script>
