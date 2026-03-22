@@ -2,17 +2,21 @@
 <html lang="ar" dir="rtl">
 
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>رادار الذهب المباشر</title>
 
 <style>
+
 body{
 background:#000;
 color:#fff;
 font-family:Tahoma;
 text-align:center;
-margin:0
+margin:0;
+padding:0
 }
 
 h1{
@@ -20,110 +24,99 @@ color:gold;
 margin-top:20px
 }
 
-.container{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-gap:20px;
-padding:20px
-}
-
-.widget{
+.box{
+background:#111;
 border:1px solid #333;
 border-radius:10px;
-overflow:hidden;
-width:380px
+padding:20px;
+margin:20px auto;
+width:90%;
+max-width:400px;
+font-size:20px
 }
 
 .price{
-font-size:24px;
-color:gold;
-margin-top:20px
+font-size:28px;
+color:#00ffcc;
+margin-top:10px
 }
+
 </style>
 
 </head>
 
 <body>
 
-<h1>🏆 تحليل الذهب / دولار لحظياً</h1>
+<h1>🏆 رادار الذهب المباشر</h1>
 
-<div class="price">
-سعر الذهب عيار 21 بالريال اليمني: <span id="yemenPrice">جاري التحميل...</span>
+<div class="box">
+الأونصة (XAUUSD)
+<div class="price" id="ounce">...</div>
 </div>
 
-<div class="container">
-
-<div class="widget">
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-{
-"interval": "5m",
-"width": "100%",
-"height": "450",
-"symbol": "OANDA:XAUUSD",
-"showIntervalTabs": true,
-"displayMode": "single",
-"locale": "ar",
-"colorTheme": "dark"
-}
-</script>
-
-</div>
+<div class="box">
+جرام 24
+<div class="price" id="g24">...</div>
 </div>
 
-<div class="widget">
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-{
-"symbol": "OANDA:XAUUSD",
-"width": "100%",
-"locale": "ar",
-"colorTheme": "dark"
-}
-</script>
-
-</div>
+<div class="box">
+جرام 21
+<div class="price" id="g21">...</div>
 </div>
 
-<div class="widget">
-<div class="tradingview-widget-container">
-<div class="tradingview-widget-container__widget"></div>
-
-<script src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-{
-"symbol": "OANDA:XAUUSD",
-"width": "100%",
-"height": "450",
-"locale": "ar",
-"dateRange": "1D",
-"colorTheme": "dark"
-}
-</script>
-
-</div>
+<div class="box">
+جرام 18
+<div class="price" id="g18">...</div>
 </div>
 
+<div class="box">
+جرام 21 بالريال اليمني
+<div class="price" id="yem21">...</div>
+</div>
+
+<div class="box">
+جرام 21 بالريال السعودي
+<div class="price" id="sar21">...</div>
 </div>
 
 <script>
-async function loadPrice(){
-let gold=5129; 
-let usdToYemeni=1300;
 
-let gram24=(gold/31.103);
-let gram21=gram24*0.875;
+const goldAPI = "https://api.gold-api.com/price/XAU";
 
-let priceYemen=Math.round(gram21*usdToYemeni);
+async function updateGold(){
 
-document.getElementById("yemenPrice").innerText=priceYemen+" ريال";
+let res = await fetch(goldAPI);
+let data = await res.json();
+
+let ounce = data.price;
+
+let gram24 = ounce / 31.1035;
+let gram21 = gram24 * 0.875;
+let gram18 = gram24 * 0.75;
+
+let usdToYem = 530;
+let usdToSar = 3.75;
+
+document.getElementById("ounce").innerText = ounce.toFixed(2) + " $";
+
+document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
+
+document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
+
+document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
+
+document.getElementById("yem21").innerText =
+(gram21 * usdToYem).toFixed(0) + " ريال";
+
+document.getElementById("sar21").innerText =
+(gram21 * usdToSar).toFixed(2) + " ريال";
+
 }
 
-loadPrice();
+updateGold();
+
+setInterval(updateGold,10000);
+
 </script>
 
 </body>
