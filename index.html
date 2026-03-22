@@ -1,15 +1,10 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>رادار الذهب المباشر</title>
-
 <style>
-
 body{
 background:#000;
 color:#fff;
@@ -18,12 +13,10 @@ text-align:center;
 margin:0;
 padding:0
 }
-
 h1{
 color:gold;
 margin-top:20px
 }
-
 .box{
 background:#111;
 border:1px solid #333;
@@ -34,17 +27,18 @@ width:90%;
 max-width:400px;
 font-size:20px
 }
-
 .price{
 font-size:28px;
 color:#00ffcc;
 margin-top:10px
 }
-
+.note{
+font-size:14px;
+color:#aaa;
+margin-top:10px
+}
 </style>
-
 </head>
-
 <body>
 
 <h1>🏆 رادار الذهب المباشر</h1>
@@ -79,44 +73,55 @@ margin-top:10px
 <div class="price" id="sar21">...</div>
 </div>
 
-<script>
+<div class="box">
+حالة التحديث
+<div class="note" id="status">جاري التحميل...</div>
+</div>
 
+<script>
 const goldAPI = "https://api.gold-api.com/price/XAU";
 
 async function updateGold(){
+  try{
+    document.getElementById("status").innerText = "جاري التحديث...";
 
-let res = await fetch(goldAPI);
-let data = await res.json();
+    let res = await fetch(goldAPI, { cache: "no-store" });
 
-let ounce = data.price;
+    if(!res.ok){
+      throw new Error("HTTP Error: " + res.status);
+    }
 
-let gram24 = ounce / 31.1035;
-let gram21 = gram24 * 0.875;
-let gram18 = gram24 * 0.75;
+    let data = await res.json();
 
-let usdToYem = 530;
-let usdToSar = 3.75;
+    let ounce = Number(data.price);
 
-document.getElementById("ounce").innerText = ounce.toFixed(2) + " $";
+    if(!ounce || isNaN(ounce)){
+      throw new Error("السعر غير صالح");
+    }
 
-document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
+    let gram24 = ounce / 31.1035;
+    let gram21 = gram24 * 0.875;
+    let gram18 = gram24 * 0.75;
 
-document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
+    let usdToYem = 530;
+    let usdToSar = 3.75;
 
-document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
+    document.getElementById("ounce").innerText = ounce.toFixed(2) + " $";
+    document.getElementById("g24").innerText = gram24.toFixed(2) + " $";
+    document.getElementById("g21").innerText = gram21.toFixed(2) + " $";
+    document.getElementById("g18").innerText = gram18.toFixed(2) + " $";
+    document.getElementById("yem21").innerText = (gram21 * usdToYem).toFixed(0) + " ريال";
+    document.getElementById("sar21").innerText = (gram21 * usdToSar).toFixed(2) + " ريال";
 
-document.getElementById("yem21").innerText =
-(gram21 * usdToYem).toFixed(0) + " ريال";
-
-document.getElementById("sar21").innerText =
-(gram21 * usdToSar).toFixed(2) + " ريال";
-
+    document.getElementById("status").innerText = "تم التحديث بنجاح";
+  }catch(error){
+    document.getElementById("status").innerText = "تعذر جلب السعر الآن";
+    console.log(error);
+  }
 }
 
 updateGold();
-
-setInterval(updateGold,10000);
-
+setInterval(updateGold, 10000);
 </script>
 
 </body>
