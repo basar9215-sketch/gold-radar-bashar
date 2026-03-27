@@ -6,26 +6,234 @@
 <title>رادار الأسعار المباشر</title>
 
 <style>
-body{background:#000;color:#fff;font-family:Tahoma;text-align:center;margin:0;padding:0;}
-h1{color:gold;margin:20px;font-size:30px;}
+body{
+    background:#000;
+    color:#fff;
+    font-family:Tahoma, Arial, sans-serif;
+    text-align:center;
+    margin:0;
+    padding:0;
+}
 
-.box{background:#111;border:1px solid #333;border-radius:14px;padding:15px;margin:10px auto;max-width:350px;}
-.price{font-size:26px;color:#00ff99;margin-top:10px;}
+h1{
+    color:gold;
+    margin:20px 10px 10px;
+    font-size:32px;
+}
 
-.top{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:10px;}
-.card{flex:1 1 200px;background:#111;border:1px solid #333;border-radius:12px;padding:15px;}
+.top-box{
+    width:95%;
+    max-width:1100px;
+    margin:15px auto;
+    background:#111;
+    border:1px solid #333;
+    border-radius:16px;
+    padding:18px;
+    box-sizing:border-box;
+}
 
-.buy{background:#053d16;}
-.sell{background:#5f0909;}
+.top-title{
+    color:#FFD700;
+    font-size:26px;
+    margin-bottom:18px;
+    font-weight:bold;
+}
 
-.karat{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:10px;}
-.karat div{background:#111;padding:15px;border-radius:12px;border:1px solid #333;}
+.controls{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:14px;
+    margin-bottom:20px;
+}
 
-.section{width:95%;max-width:1100px;margin:15px auto;background:#111;padding:15px;border-radius:16px;border:1px solid #333;}
-.title{color:gold;font-size:22px;margin-bottom:10px;}
+.control-item{
+    background:#1a1a1a;
+    border:1px solid #333;
+    border-radius:12px;
+    padding:12px;
+    min-width:220px;
+    box-sizing:border-box;
+}
 
-.status{color:#888;font-size:14px;margin:10px;}
+.control-item label{
+    display:block;
+    margin-bottom:8px;
+    color:#bbb;
+    font-size:16px;
+}
 
+.control-item input{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:10px;
+    background:#000;
+    color:#fff;
+    text-align:center;
+    font-size:22px;
+    box-sizing:border-box;
+}
+
+button{
+    background:gold;
+    color:#000;
+    border:none;
+    border-radius:12px;
+    padding:14px 24px;
+    font-size:20px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-bottom:20px;
+}
+
+button:hover{
+    opacity:0.9;
+}
+
+.price-windows{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:16px;
+    margin-bottom:10px;
+}
+
+.price-card{
+    flex:1 1 320px;
+    min-width:280px;
+    max-width:500px;
+    border-radius:14px;
+    padding:24px 18px;
+    box-sizing:border-box;
+    border:1px solid #333;
+}
+
+.buy-card{
+    background:linear-gradient(145deg,#053d16,#0a6b24);
+}
+
+.sell-card{
+    background:linear-gradient(145deg,#5f0909,#8f1010);
+}
+
+.card-label{
+    font-size:22px;
+    margin-bottom:18px;
+    font-weight:bold;
+}
+
+.buy-card .card-label{
+    color:#8CFF9D;
+}
+
+.sell-card .card-label{
+    color:#FF9A9A;
+}
+
+.card-price{
+    font-size:38px;
+    font-weight:bold;
+    margin-bottom:12px;
+}
+
+.unit{
+    font-size:22px;
+    color:#ddd;
+}
+
+.mini-note{
+    margin-top:14px;
+    font-size:16px;
+    color:#ccc;
+}
+
+.karat-box{
+    width:95%;
+    max-width:1100px;
+    margin:18px auto;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:16px;
+}
+
+.karat-card{
+    background:#111;
+    border:1px solid #333;
+    border-radius:14px;
+    padding:18px;
+    min-width:210px;
+    flex:1 1 210px;
+    max-width:260px;
+    box-sizing:border-box;
+}
+
+.karat-title{
+    color:gold;
+    font-size:28px;
+    margin-bottom:12px;
+    font-weight:bold;
+}
+
+.karat-price{
+    font-size:44px;
+    color:#00ff99;
+    font-weight:bold;
+}
+
+.live-widget-wrap{
+    width:95%;
+    max-width:1100px;
+    margin:20px auto 35px auto;
+    background:#111;
+    border:1px solid #333;
+    border-radius:16px;
+    padding:18px;
+    box-sizing:border-box;
+}
+
+.live-title{
+    color:#FFD700;
+    font-size:26px;
+    margin-bottom:16px;
+    font-weight:bold;
+}
+
+@media (max-width:768px){
+    h1{
+        font-size:26px;
+    }
+
+    .top-title,
+    .live-title{
+        font-size:22px;
+    }
+
+    .card-label{
+        font-size:20px;
+    }
+
+    .card-price{
+        font-size:34px;
+    }
+
+    .unit{
+        font-size:18px;
+    }
+
+    .karat-title{
+        font-size:22px;
+    }
+
+    .karat-price{
+        font-size:34px;
+    }
+
+    .control-item{
+        min-width:100%;
+    }
+}
 </style>
 </head>
 
@@ -33,56 +241,94 @@ h1{color:gold;margin:20px;font-size:30px;}
 
 <h1>🏆 رادار بشار النقيب لأسعار الذهب المباشر</h1>
 
-<div class="top">
-    <div class="card buy">
-        <div>سعر الشراء</div>
-        <div class="price" id="buyPrice">...</div>
+<div class="top-box">
+    <div class="top-title">🇾🇪 تسعير الذهب الخليجي</div>
+
+    <div class="controls">
+        <div class="control-item">
+            <label for="yerRate">سعر الصرف</label>
+            <input type="number" id="yerRate" value="535">
+        </div>
+
+        <div class="control-item">
+            <label for="buyExtra">زيادة على الشراء</label>
+            <input type="number" id="buyExtra" value="0">
+        </div>
+
+        <div class="control-item">
+            <label for="sellDiff">فارق البيع عن الشراء</label>
+            <input type="number" id="sellDiff" value="4000">
+        </div>
     </div>
 
-    <div class="card sell">
-        <div>سعر البيع</div>
-        <div class="price" id="sellPrice">...</div>
+    <button onclick="updateGold()">تحديث الأسعار</button>
+
+    <div class="price-windows">
+        <div class="price-card buy-card">
+            <div class="card-label">سعر الشراء منكم</div>
+            <div class="card-price" id="buyPrice">جاري التحميل...</div>
+            <div class="unit">ريال يمني / جرام 21</div>
+            <div class="mini-note">يمكنك التحكم بالزيادة من الأعلى</div>
+        </div>
+
+        <div class="price-card sell-card">
+            <div class="card-label">سعر البيع لكم</div>
+            <div class="card-price" id="sellPrice">جاري التحميل...</div>
+            <div class="unit">ريال يمني / جرام 21</div>
+            <div class="mini-note">البيع = الشراء + فارق البيع</div>
+        </div>
     </div>
 </div>
 
-<div class="karat">
-    <div>أونصة: <span id="ouncePrice">...</span></div>
-    <div>جرام 24: <span id="gram24">...</span></div>
-    <div>جرام 21: <span id="gram21">...</span></div>
-    <div>جرام 18: <span id="gram18">...</span></div>
-</div>
+<div class="karat-box">
+    <div class="karat-card">
+        <div class="karat-title">سعر الأونصة</div>
+        <div class="karat-price" id="ouncePrice">...</div>
+    </div>
 
-<!-- 💵 مؤشر الدولار (مستقل) -->
-<div class="section">
-    <div class="title">💵 مؤشر الدولار</div>
+    <div class="karat-card">
+        <div class="karat-title">جرام 24</div>
+        <div class="karat-price" id="gram24">...</div>
+    </div>
 
-    <div class="tradingview-widget-container">
-        <div class="tradingview-widget-container__widget"></div>
-        <script src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-        {
-            "symbol": "TVC:DXY",
-            "width": "100%",
-            "locale": "ar",
-            "colorTheme": "dark"
-        }
-        </script>
+    <div class="karat-card">
+        <div class="karat-title">جرام 21</div>
+        <div class="karat-price" id="gram21">...</div>
+    </div>
+
+    <div class="karat-card">
+        <div class="karat-title">جرام 18</div>
+        <div class="karat-price" id="gram18">...</div>
     </div>
 </div>
 
-<!-- 📊 المؤشرات -->
-<div class="section">
-    <div class="title">📊 المؤشرات الحية</div>
+<div class="live-widget-wrap">
+    <div class="live-title">📊 المؤشرات الحية المجانية</div>
 
     <div class="tradingview-widget-container">
         <div class="tradingview-widget-container__widget"></div>
         <script src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js" async>
         {
             "symbols": [
-                {"proName": "OANDA:XAUUSD","title": "الذهب"},
-                {"proName": "OANDA:XAGUSD","title": "الفضة"},
-                {"proName": "TVC:UKOIL","title": "نفط برنت"},
-                {"proName": "TVC:USOIL","title": "النفط"}
+                {
+                    "proName": "OANDA:XAUUSD",
+                    "title": "الذهب / دولار"
+                },
+                {
+                    "proName": "OANDA:XAGUSD",
+                    "title": "الفضة / دولار"
+                },
+                {
+                    "proName": "TVC:UKOIL",
+                    "title": "نفط برنت"
+                },
+                {
+                    "proName": "TVC:USOIL",
+                    "title": "النفط الخفيف"
+                }
             ],
+            "isTransparent": false,
+            "showSymbolLogo": true,
             "colorTheme": "dark",
             "locale": "ar"
         }
@@ -90,61 +336,59 @@ h1{color:gold;margin:20px;font-size:30px;}
     </div>
 </div>
 
-<div class="status" id="status">جاري التحميل...</div>
-
 <script>
-// =====================
-// إعداداتك (مخفية)
-// =====================
 const API_KEY = "2cad562e57af449282b26db26e53403e";
-const YER_RATE = 535;
-const BUY_EXTRA = 0;
-const SELL_DIFF = 4000;
-const UPDATE_INTERVAL = 30000;
-// =====================
 
-function format(n){return Math.round(n).toLocaleString()+" ريال"}
-
-async function getPrice(){
-    const res = await fetch(`https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`);
-    const data = await res.json();
-    return parseFloat(data.price);
+function formatYER(num){
+    return Math.round(num).toLocaleString("ar-YE") + " ريال";
 }
 
-async function update(){
+async function updateGold(){
     try{
-        document.getElementById("status").innerText="تحديث...";
+        const yerRate = parseFloat(document.getElementById("yerRate").value) || 0;
+        const buyExtra = parseFloat(document.getElementById("buyExtra").value) || 0;
+        const sellDiff = parseFloat(document.getElementById("sellDiff").value) || 0;
 
-        let ounce = await getPrice();
+        const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
 
-        let g24 = ounce / 31.1035;
-        let g21 = g24 * 0.875;
-        let g18 = g24 * 0.75;
+        if(!data.price){
+            throw new Error("لم يتم جلب السعر");
+        }
 
-        let g24y = g24 * YER_RATE;
-        let g21y = g21 * YER_RATE;
-        let g18y = g18 * YER_RATE;
+        const ounce = parseFloat(data.price);
 
-        let buy = g21y + BUY_EXTRA;
-        let sell = buy + SELL_DIFF;
+        const gram24USD = ounce / 31.1035;
+        const gram21USD = gram24USD * 0.875;
+        const gram18USD = gram24USD * 0.750;
 
-        document.getElementById("buyPrice").innerText = format(buy);
-        document.getElementById("sellPrice").innerText = format(sell);
+        const gram24YER = gram24USD * yerRate;
+        const gram21YER = gram21USD * yerRate;
+        const gram18YER = gram18USD * yerRate;
 
-        document.getElementById("ouncePrice").innerText = ounce.toFixed(2);
-        document.getElementById("gram24").innerText = format(g24y);
-        document.getElementById("gram21").innerText = format(g21y);
-        document.getElementById("gram18").innerText = format(g18y);
+        const buyPrice = gram21YER + buyExtra;
+        const sellPrice = buyPrice + sellDiff;
 
-        document.getElementById("status").innerText="آخر تحديث: "+new Date().toLocaleTimeString();
+        document.getElementById("buyPrice").innerHTML = formatYER(buyPrice);
+        document.getElementById("sellPrice").innerHTML = formatYER(sellPrice);
+        document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
+        document.getElementById("gram24").innerHTML = formatYER(gram24YER);
+        document.getElementById("gram21").innerHTML = formatYER(gram21YER);
+        document.getElementById("gram18").innerHTML = formatYER(gram18YER);
 
-    }catch(e){
-        document.getElementById("status").innerText="خطأ في التحديث";
+    }catch(error){
+        document.getElementById("buyPrice").innerHTML = "خطأ";
+        document.getElementById("sellPrice").innerHTML = "خطأ";
+        document.getElementById("ouncePrice").innerHTML = "خطأ";
+        document.getElementById("gram24").innerHTML = "خطأ";
+        document.getElementById("gram21").innerHTML = "خطأ";
+        document.getElementById("gram18").innerHTML = "خطأ";
     }
 }
 
-update();
-setInterval(update, UPDATE_INTERVAL);
+updateGold();
+setInterval(updateGold, 30000);
 </script>
 
 </body>
