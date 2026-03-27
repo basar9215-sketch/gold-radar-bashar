@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>رادار بشار النقيب لأسعار الذهب </title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>رادار الأسعار المباشر</title>
 
 <style>
 body{
@@ -39,56 +39,10 @@ h1{
     font-weight:bold;
 }
 
-.controls{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:14px;
-    margin-bottom:20px;
-}
-
-.control-item{
-    background:#1a1a1a;
-    border:1px solid #333;
-    border-radius:12px;
-    padding:12px;
-    min-width:220px;
-    box-sizing:border-box;
-}
-
-.control-item label{
-    display:block;
-    margin-bottom:8px;
-    color:#bbb;
-    font-size:16px;
-}
-
-.control-item input{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    background:#000;
-    color:#fff;
-    text-align:center;
-    font-size:22px;
-    box-sizing:border-box;
-}
-
-button{
-    background:gold;
-    color:#000;
-    border:none;
-    border-radius:12px;
-    padding:14px 24px;
-    font-size:20px;
-    font-weight:bold;
-    cursor:pointer;
-    margin-bottom:20px;
-}
-
-button:hover{
-    opacity:0.9;
+.top-note{
+    color:#aaa;
+    font-size:15px;
+    margin-bottom:18px;
 }
 
 .price-windows{
@@ -200,6 +154,14 @@ button:hover{
     font-weight:bold;
 }
 
+.status-bar{
+    width:95%;
+    max-width:1100px;
+    margin:10px auto 0 auto;
+    color:#888;
+    font-size:14px;
+}
+
 @media (max-width:768px){
     h1{
         font-size:26px;
@@ -229,10 +191,6 @@ button:hover{
     .karat-price{
         font-size:34px;
     }
-
-    .control-item{
-        min-width:100%;
-    }
 }
 </style>
 </head>
@@ -243,39 +201,21 @@ button:hover{
 
 <div class="top-box">
     <div class="top-title">🇾🇪 تسعير الذهب الخليجي</div>
-
-    <div class="controls">
-        <div class="control-item">
-            <label for="yerRate">سعر الصرف</label>
-            <input type="number" id="yerRate" value="535">
-        </div>
-
-        <div class="control-item">
-            <label for="buyExtra">زيادة على الشراء</label>
-            <input type="number" id="buyExtra" value="0">
-        </div>
-
-        <div class="control-item">
-            <label for="sellDiff">فارق البيع عن الشراء</label>
-            <input type="number" id="sellDiff" value="4000">
-        </div>
-    </div>
-
-    <button onclick="updateGold()">تحديث الأسعار</button>
+    <div class="top-note">الأسعار تُحدَّث تلقائياً</div>
 
     <div class="price-windows">
         <div class="price-card buy-card">
             <div class="card-label">سعر الشراء منكم</div>
             <div class="card-price" id="buyPrice">جاري التحميل...</div>
             <div class="unit">ريال يمني / جرام 21</div>
-            <div class="mini-note">يمكنك التحكم بالزيادة من الأعلى</div>
+            <div class="mini-note">سعر الشراء المعتمد في المحل</div>
         </div>
 
         <div class="price-card sell-card">
             <div class="card-label">سعر البيع لكم</div>
             <div class="card-price" id="sellPrice">جاري التحميل...</div>
             <div class="unit">ريال يمني / جرام 21</div>
-            <div class="mini-note">البيع = الشراء + فارق البيع</div>
+            <div class="mini-note">سعر البيع المعتمد في المحل</div>
         </div>
     </div>
 </div>
@@ -340,60 +280,90 @@ button:hover{
     </div>
 </div>
 
+<div class="status-bar" id="statusBar">آخر تحديث: جاري التحميل...</div>
+
 <script>
+/* =========================
+   إعداداتك الخاصة (لا تظهر في الشاشة)
+   عدلها من هنا فقط
+========================= */
 const API_KEY = "2cad562e57af449282b26db26e53403e";
+const YER_RATE = 535;       // سعر الصرف
+const BUY_EXTRA = 0;        // زيادة على الشراء
+const SELL_DIFF = 4000;     // فارق البيع عن الشراء
+const UPDATE_INTERVAL = 30000; // 30000 = كل 30 ثانية
+/* ========================= */
 
 function formatYER(num){
     return Math.round(num).toLocaleString("ar-YE") + " ريال";
 }
 
+function formatUSD(num){
+    return parseFloat(num).toFixed(2) + " $";
+}
+
+function updateStatus(text){
+    document.getElementById("statusBar").textContent = text;
+}
+
+function getNowText(){
+    const now = new Date();
+    return now.toLocaleString("ar-YE");
+}
+
+async function fetchGoldOunce(){
+    const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
+    const res = await fetch(url, { cache: "no-store" });
+    const data = await res.json();
+
+    if(!data.price){
+        throw new Error("تعذر جلب سعر الأونصة");
+    }
+
+    return parseFloat(data.price);
+}
+
 async function updateGold(){
     try{
-        const yerRate = parseFloat(document.getElementById("yerRate").value) || 0;
-        const buyExtra = parseFloat(document.getElementById("buyExtra").value) || 0;
-        const sellDiff = parseFloat(document.getElementById("sellDiff").value) || 0;
+        updateStatus("آخر تحديث: جاري جلب السعر...");
 
-        const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if(!data.price){
-            throw new Error("لم يتم جلب السعر");
-        }
-
-        const ounce = parseFloat(data.price);
+        const ounce = await fetchGoldOunce();
 
         const gram24USD = ounce / 31.1035;
         const gram21USD = gram24USD * 0.875;
         const gram18USD = gram24USD * 0.750;
 
-        const gram24YER = gram24USD * yerRate;
-        const gram21YER = gram21USD * yerRate;
-        const gram18YER = gram18USD * yerRate;
+        const gram24YER = gram24USD * YER_RATE;
+        const gram21YER = gram21USD * YER_RATE;
+        const gram18YER = gram18USD * YER_RATE;
 
-        const buyPrice = gram21YER + buyExtra;
-        const sellPrice = buyPrice + sellDiff;
+        const buyPrice = gram21YER + BUY_EXTRA;
+        const sellPrice = buyPrice + SELL_DIFF;
 
-        document.getElementById("buyPrice").innerHTML = formatYER(buyPrice);
-        document.getElementById("sellPrice").innerHTML = formatYER(sellPrice);
-        document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
-        document.getElementById("gram24").innerHTML = formatYER(gram24YER);
-        document.getElementById("gram21").innerHTML = formatYER(gram21YER);
-        document.getElementById("gram18").innerHTML = formatYER(gram18YER);
+        document.getElementById("buyPrice").textContent = formatYER(buyPrice);
+        document.getElementById("sellPrice").textContent = formatYER(sellPrice);
 
+        document.getElementById("ouncePrice").textContent = formatUSD(ounce);
+        document.getElementById("gram24").textContent = formatYER(gram24YER);
+        document.getElementById("gram21").textContent = formatYER(gram21YER);
+        document.getElementById("gram18").textContent = formatYER(gram18YER);
+
+        updateStatus("آخر تحديث: " + getNowText());
     }catch(error){
-        document.getElementById("buyPrice").innerHTML = "خطأ";
-        document.getElementById("sellPrice").innerHTML = "خطأ";
-        document.getElementById("ouncePrice").innerHTML = "خطأ";
-        document.getElementById("gram24").innerHTML = "خطأ";
-        document.getElementById("gram21").innerHTML = "خطأ";
-        document.getElementById("gram18").innerHTML = "خطأ";
+        document.getElementById("buyPrice").textContent = "خطأ";
+        document.getElementById("sellPrice").textContent = "خطأ";
+        document.getElementById("ouncePrice").textContent = "خطأ";
+        document.getElementById("gram24").textContent = "خطأ";
+        document.getElementById("gram21").textContent = "خطأ";
+        document.getElementById("gram18").textContent = "خطأ";
+
+        updateStatus("فشل التحديث: " + error.message);
     }
 }
 
 updateGold();
-setInterval(updateGold, 30000);
+setInterval(updateGold, UPDATE_INTERVAL);
 </script>
 
 </body>
-              </html>
+</html>
