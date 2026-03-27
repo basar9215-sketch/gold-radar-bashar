@@ -39,42 +39,6 @@ h1{
     font-weight:bold;
 }
 
-.controls{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    gap:14px;
-    margin-bottom:20px;
-}
-
-.control-item{
-    background:#1a1a1a;
-    border:1px solid #333;
-    border-radius:12px;
-    padding:12px;
-    min-width:220px;
-    box-sizing:border-box;
-}
-
-.control-item label{
-    display:block;
-    margin-bottom:8px;
-    color:#bbb;
-    font-size:16px;
-}
-
-.control-item input{
-    width:100%;
-    padding:12px;
-    border:none;
-    border-radius:10px;
-    background:#000;
-    color:#fff;
-    text-align:center;
-    font-size:22px;
-    box-sizing:border-box;
-}
-
 button{
     background:gold;
     color:#000;
@@ -182,6 +146,53 @@ button:hover{
     font-weight:bold;
 }
 
+.signal-box{
+    width:95%;
+    max-width:1100px;
+    margin:18px auto;
+    background:#111;
+    border:1px solid #333;
+    border-radius:16px;
+    padding:18px;
+    box-sizing:border-box;
+}
+
+.signal-title{
+    color:#FFD700;
+    font-size:26px;
+    margin-bottom:14px;
+    font-weight:bold;
+}
+
+.signal-main{
+    font-size:34px;
+    font-weight:bold;
+    margin-bottom:12px;
+}
+
+.signal-buy{
+    color:#00ff99;
+}
+
+.signal-sell{
+    color:#ff5c5c;
+}
+
+.signal-wait{
+    color:#ffd166;
+}
+
+.market-state{
+    font-size:22px;
+    color:#ddd;
+    margin-bottom:10px;
+}
+
+.last-update{
+    font-size:15px;
+    color:#999;
+}
+
 .live-widget-wrap{
     width:95%;
     max-width:1100px;
@@ -206,7 +217,8 @@ button:hover{
     }
 
     .top-title,
-    .live-title{
+    .live-title,
+    .signal-title{
         font-size:22px;
     }
 
@@ -230,8 +242,12 @@ button:hover{
         font-size:34px;
     }
 
-    .control-item{
-        min-width:100%;
+    .signal-main{
+        font-size:28px;
+    }
+
+    .market-state{
+        font-size:20px;
     }
 }
 </style>
@@ -244,38 +260,21 @@ button:hover{
 <div class="top-box">
     <div class="top-title">🇾🇪 تسعير الذهب الخليجي</div>
 
-    <div class="controls">
-        <div class="control-item">
-            <label for="yerRate">سعر الصرف</label>
-            <input type="number" id="yerRate" value="535">
-        </div>
-
-        <div class="control-item">
-            <label for="buyExtra">زيادة على الشراء</label>
-            <input type="number" id="buyExtra" value="0">
-        </div>
-
-        <div class="control-item">
-            <label for="sellDiff">فارق البيع عن الشراء</label>
-            <input type="number" id="sellDiff" value="4000">
-        </div>
-    </div>
-
-    <button onclick="updateGold()">تحديث الأسعار</button>
+    <button onclick="updateGold()">تحديث الآن</button>
 
     <div class="price-windows">
         <div class="price-card buy-card">
             <div class="card-label">سعر الشراء منكم</div>
             <div class="card-price" id="buyPrice">جاري التحميل...</div>
             <div class="unit">ريال يمني / جرام 21</div>
-            <div class="mini-note">يمكنك التحكم بالزيادة من الأعلى</div>
+            <div class="mini-note">سعر الشراء المعتمد</div>
         </div>
 
         <div class="price-card sell-card">
             <div class="card-label">سعر البيع لكم</div>
             <div class="card-price" id="sellPrice">جاري التحميل...</div>
             <div class="unit">ريال يمني / جرام 21</div>
-            <div class="mini-note">البيع = الشراء + فارق البيع</div>
+            <div class="mini-note">سعر البيع المعتمد</div>
         </div>
     </div>
 </div>
@@ -300,6 +299,13 @@ button:hover{
         <div class="karat-title">جرام 18</div>
         <div class="karat-price" id="gram18">...</div>
     </div>
+</div>
+
+<div class="signal-box">
+    <div class="signal-title">📍 إشارة السوق</div>
+    <div class="signal-main signal-wait" id="signalText">جاري التحليل...</div>
+    <div class="market-state" id="marketState">حالة السوق: جاري التحليل...</div>
+    <div class="last-update" id="lastUpdate">آخر تحديث: ...</div>
 </div>
 
 <div class="live-widget-wrap">
@@ -339,18 +345,73 @@ button:hover{
 <script>
 const API_KEY = "2cad562e57af449282b26db26e53403e";
 
+/* إعداداتك الخاصة - مخفية عن الشاشة */
+const yerRate = 535;
+const buyExtra = 0;
+const sellDiff = 4000;
+const autoUpdateMs = 30000;
+
+/* تحليل السوق */
+let priceHistory = [];
+let isUpdating = false;
+
 function formatYER(num){
     return Math.round(num).toLocaleString("ar-YE") + " ريال";
 }
 
-async function updateGold(){
-    try{
-        const yerRate = parseFloat(document.getElementById("yerRate").value) || 0;
-        const buyExtra = parseFloat(document.getElementById("buyExtra").value) || 0;
-        const sellDiff = parseFloat(document.getElementById("sellDiff").value) || 0;
+function nowText(){
+    return new Date().toLocaleTimeString("ar-YE");
+}
 
+function analyzeMarket(currentPrice){
+    priceHistory.push(currentPrice);
+
+    if(priceHistory.length > 8){
+        priceHistory.shift();
+    }
+
+    if(priceHistory.length < 4){
+        return {
+            signal: "انتظر",
+            signalClass: "signal-wait",
+            state: "حالة السوق: البيانات غير كافية"
+        };
+    }
+
+    const first = priceHistory[0];
+    const last = priceHistory[priceHistory.length - 1];
+    const diff = last - first;
+
+    if(diff >= 3){
+        return {
+            signal: "مناسب بيع",
+            signalClass: "signal-sell",
+            state: "حالة السوق: صاعد"
+        };
+    }
+
+    if(diff <= -3){
+        return {
+            signal: "مناسب شراء",
+            signalClass: "signal-buy",
+            state: "حالة السوق: هابط"
+        };
+    }
+
+    return {
+        signal: "انتظر",
+        signalClass: "signal-wait",
+        state: "حالة السوق: جانبي"
+    };
+}
+
+async function updateGold(){
+    if(isUpdating) return;
+    isUpdating = true;
+
+    try{
         const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: "no-store" });
         const data = await res.json();
 
         if(!data.price){
@@ -377,6 +438,14 @@ async function updateGold(){
         document.getElementById("gram21").innerHTML = formatYER(gram21YER);
         document.getElementById("gram18").innerHTML = formatYER(gram18YER);
 
+        const analysis = analyzeMarket(ounce);
+        const signalText = document.getElementById("signalText");
+        signalText.className = "signal-main " + analysis.signalClass;
+        signalText.textContent = analysis.signal;
+
+        document.getElementById("marketState").textContent = analysis.state;
+        document.getElementById("lastUpdate").textContent = "آخر تحديث: " + nowText();
+
     }catch(error){
         document.getElementById("buyPrice").innerHTML = "خطأ";
         document.getElementById("sellPrice").innerHTML = "خطأ";
@@ -384,11 +453,19 @@ async function updateGold(){
         document.getElementById("gram24").innerHTML = "خطأ";
         document.getElementById("gram21").innerHTML = "خطأ";
         document.getElementById("gram18").innerHTML = "خطأ";
+
+        const signalText = document.getElementById("signalText");
+        signalText.className = "signal-main signal-wait";
+        signalText.textContent = "تعذر التحليل";
+        document.getElementById("marketState").textContent = "حالة السوق: لا توجد بيانات";
+        document.getElementById("lastUpdate").textContent = "آخر تحديث: فشل";
+    }finally{
+        isUpdating = false;
     }
 }
 
 updateGold();
-setInterval(updateGold, 30000);
+setInterval(updateGold, autoUpdateMs);
 </script>
 
 </body>
