@@ -343,6 +343,7 @@ button:hover{
 </div>
 
 <script>
+/* مفتاح API */
 const API_KEY = "2cad562e57af449282b26db26e53403e";
 
 /* إعداداتك الخاصة - مخفية عن الشاشة */
@@ -350,6 +351,9 @@ const yerRate = 535;
 const buyExtra = 0;
 const sellDiff = 4000;
 const autoUpdateMs = 30000;
+
+/* سعر احتياطي إذا فشل الجلب */
+const fallbackOuncePrice = 4500;
 
 /* تحليل السوق */
 let priceHistory = [];
@@ -405,55 +409,82 @@ function analyzeMarket(currentPrice){
     };
 }
 
+function renderPrices(ounce, sourceLabel){
+    const gram24USD = ounce / 31.1035;
+    const gram21USD = gram24USD * 0.875;
+    const gram18USD = gram24USD * 0.750;
+
+    const gram24YER = gram24USD * yerRate;
+    const gram21YER = gram21USD * yerRate;
+    const gram18YER = gram18USD * yerRate;
+
+    const buyPrice = gram21YER + buyExtra;
+    const sellPrice = buyPrice + sellDiff;
+
+    document.getElementById("buyPrice").innerHTML = formatYER(buyPrice);
+    document.getElementById("sellPrice").innerHTML = formatYER(sellPrice);
+    document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
+    document.getElementById("gram24").innerHTML = formatYER(gram24YER);
+    document.getElementById("gram21").innerHTML = formatYER(gram21YER);
+    document.getElementById("gram18").innerHTML = formatYER(gram18YER);
+
+    const analysis = analyzeMarket(ounce);
+    const signalText = document.getElementById("signalText");
+    signalText.className = "signal-main " + analysis.signalClass;
+    signalText.textContent = analysis.signal;
+
+    document.getElementById("marketState").textContent = analysis.state;
+    document.getElementById("lastUpdate").textContent =
+        "آخر تحديث: " + nowText() + " | المصدر: " + sourceLabel;
+}
+
+async function fetchFromTwelveData(){
+    const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
+    const res = await fetch(url, { cache: "no-store" });
+    const data = await res.json();
+
+    if(!data.price){
+        throw new Error("لم يتم جلب السعر من TwelveData");
+    }
+
+    return parseFloat(data.price);
+}
+
+async function fetchFromMetalsLive(){
+    const res = await fetch("https://api.metals.live/v1/spot/gold", { cache: "no-store" });
+    const data = await res.json();
+
+    if(!data || !Array.isArray(data) || !data[0] || typeof data[0].price === "undefined"){
+        throw new Error("لم يتم جلب السعر من metals.live");
+    }
+
+    return parseFloat(data[0].price);
+}
+
 async function updateGold(){
     if(isUpdating) return;
     isUpdating = true;
 
     try{
-        const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
-        const res = await fetch(url, { cache: "no-store" });
-        const data = await res.json();
+        let ounce = null;
+        let sourceLabel = "";
 
-        if(!data.price){
-            throw new Error("لم يتم جلب السعر");
+        try{
+            ounce = await fetchFromTwelveData();
+            sourceLabel = "TwelveData";
+        }catch(e1){
+            try{
+                ounce = await fetchFromMetalsLive();
+                sourceLabel = "metals.live";
+            }catch(e2){
+                ounce = fallbackOuncePrice;
+                sourceLabel = "احتياطي";
+            }
         }
 
-        const ounce = parseFloat(data.price);
-
-        const gram24USD = ounce / 31.1035;
-        const gram21USD = gram24USD * 0.875;
-        const gram18USD = gram24USD * 0.750;
-
-        const gram24YER = gram24USD * yerRate;
-        const gram21YER = gram21USD * yerRate;
-        const gram18YER = gram18USD * yerRate;
-
-        const buyPrice = gram21YER + buyExtra;
-        const sellPrice = buyPrice + sellDiff;
-
-        document.getElementById("buyPrice").innerHTML = formatYER(buyPrice);
-        document.getElementById("sellPrice").innerHTML = formatYER(sellPrice);
-        document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
-        document.getElementById("gram24").innerHTML = formatYER(gram24YER);
-        document.getElementById("gram21").innerHTML = formatYER(gram21YER);
-        document.getElementById("gram18").innerHTML = formatYER(gram18YER);
-
-        const analysis = analyzeMarket(ounce);
-        const signalText = document.getElementById("signalText");
-        signalText.className = "signal-main " + analysis.signalClass;
-        signalText.textContent = analysis.signal;
-
-        document.getElementById("marketState").textContent = analysis.state;
-        document.getElementById("lastUpdate").textContent = "آخر تحديث: " + nowText();
+        renderPrices(ounce, sourceLabel);
 
     }catch(error){
-        document.getElementById("buyPrice").innerHTML = "خطأ";
-        document.getElementById("sellPrice").innerHTML = "خطأ";
-        document.getElementById("ouncePrice").innerHTML = "خطأ";
-        document.getElementById("gram24").innerHTML = "خطأ";
-        document.getElementById("gram21").innerHTML = "خطأ";
-        document.getElementById("gram18").innerHTML = "خطأ";
-
         const signalText = document.getElementById("signalText");
         signalText.className = "signal-main signal-wait";
         signalText.textContent = "تعذر التحليل";
