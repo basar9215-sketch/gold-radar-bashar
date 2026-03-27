@@ -325,25 +325,27 @@ button:hover{
         </script>
     </div>
 </div>
-
 <script>
-/* =========================
-   إعداداتك الخاصة - مخفية
-========================= */
 const API_KEY = "8e666e473a5d4624a8f75219314f1a18";
+
 const yerRate = 535;
 const buyExtra = 0;
 const sellDiff = 4000;
-const autoUpdateMs = 60000;   // كل 1 ثواني
-const strongMoveThreshold = 3; // حد الحركة للإشارة
-const beepEnabled = true;
-/* ========================= */
+
+const normalUpdateMs = 30000;
+const slowUpdateMs = 60000;
+
+const strongMoveThreshold = 3;
+const freezeLimit = 6; // كم مرة ثابت = السوق مغلق
 
 let priceHistory = [];
 let isUpdating = false;
-let traderMode = false;
+let lastOunce = 4500;
 let lastSignal = "";
-let lastOunce = null;
+let autoTimer = null;
+
+let freezeCount = 0;
+let lastPriceCheck = null;
 
 function formatYER(num){
     return Math.round(num).toLocaleString("ar-YE") + " ريال";
@@ -353,19 +355,20 @@ function nowText(){
     return new Date().toLocaleTimeString("ar-YE");
 }
 
-function setSystemStatus(text){
-    document.getElementById("systemStatus").textContent = text;
+function setStatus(txt){
+    document.getElementById("systemStatus").textContent = txt;
 }
 
-function toggleTraderMode(){
-    traderMode = !traderMode;
-    document.body.classList.toggle("trader-mode", traderMode);
+function stopUpdates(){
+    if(autoTimer){
+        clearInterval(autoTimer);
+        autoTimer = null;
+    }
 }
 
-function playAlert(){
-    if(!beepEnabled) return;
-    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
-    audio.play().catch(() => {});
+function startUpdates(ms){
+    stopUpdates();
+    autoTimer = setInterval(updateGold, ms);
 }
 
 function analyzeMarket(currentPrice){
@@ -376,50 +379,62 @@ function analyzeMarket(currentPrice){
     }
 
     if(priceHistory.length < 4){
-        return {
-            signal: "انتظر",
-            signalClass: "signal-wait",
-            state: "حالة السوق: البيانات غير كافية"
-        };
+        return { signal:"انتظر", cls:"signal-wait", state:"البيانات غير كافية" };
     }
 
-    const first = priceHistory[0];
-    const last = priceHistory[priceHistory.length - 1];
-    const diff = last - first;
+    const diff = priceHistory[priceHistory.length-1] - priceHistory[0];
 
     if(diff >= strongMoveThreshold){
-        return {
-            signal: "🔴 مناسب بيع",
-            signalClass: "signal-sell",
-            state: "حالة السوق: صاعد"
-        };
+        return { signal:"🔴 بيع", cls:"signal-sell", state:"صاعد" };
     }
 
     if(diff <= -strongMoveThreshold){
-        return {
-            signal: "🟢 مناسب شراء",
-            signalClass: "signal-buy",
-            state: "حالة السوق: هابط"
-        };
+        return { signal:"🟢 شراء", cls:"signal-buy", state:"هابط" };
     }
 
-    return {
-        signal: "🟡 انتظر",
-        signalClass: "signal-wait",
-        state: "حالة السوق: جانبي"
-    };
+    return { signal:"🟡 انتظار", cls:"signal-wait", state:"جانبي" };
 }
 
-async function fetchGoldPrice(){
-    const url = `https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`;
-    const res = await fetch(url, { cache: "no-store" });
+async function fetchPrice(){
+    const res = await fetch(`https://api.twelvedata.com/price?symbol=XAU/USD&apikey=${API_KEY}`);
     const data = await res.json();
 
     if(!data.price){
-        throw new Error("لم يتم جلب السعر");
+        throw new Error("no price");
     }
 
     return parseFloat(data.price);
+}
+
+function render(ounce, statusText){
+    const g24 = ounce / 31.1035;
+    const g21 = g24 * 0.875;
+    const g18 = g24 * 0.75;
+
+    const y24 = g24 * yerRate;
+    const y21 = g21 * yerRate;
+    const y18 = g18 * yerRate;
+
+    const buy = y21 + buyExtra;
+    const sell = buy + sellDiff;
+
+    document.getElementById("buyPrice").innerHTML = formatYER(buy);
+    document.getElementById("sellPrice").innerHTML = formatYER(sell);
+    document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
+    document.getElementById("gram24").innerHTML = formatYER(y24);
+    document.getElementById("gram21").innerHTML = formatYER(y21);
+    document.getElementById("gram18").innerHTML = formatYER(y18);
+
+    const a = analyzeMarket(ounce);
+
+    const el = document.getElementById("signalText");
+    el.className = "signal-main " + a.cls;
+    el.textContent = a.signal;
+
+    document.getElementById("marketState").textContent = "حالة السوق: " + a.state;
+    document.getElementById("lastUpdate").textContent = "آخر تحديث: " + nowText();
+
+    setStatus(statusText);
 }
 
 async function updateGold(){
@@ -427,72 +442,48 @@ async function updateGold(){
     isUpdating = true;
 
     try{
-        setSystemStatus("جاري التحديث...");
+        let price;
 
-        const ounce = await fetchGoldPrice();
+        try{
+            price = await fetchPrice();
+            lastOunce = price;
 
-        const gram24USD = ounce / 31.1035;
-        const gram21USD = gram24USD * 0.875;
-        const gram18USD = gram24USD * 0.750;
-
-        const gram24YER = gram24USD * yerRate;
-        const gram21YER = gram21USD * yerRate;
-        const gram18YER = gram18USD * yerRate;
-
-        const buyPrice = gram21YER + buyExtra;
-        const sellPrice = buyPrice + sellDiff;
-
-        document.getElementById("buyPrice").innerHTML = formatYER(buyPrice);
-        document.getElementById("sellPrice").innerHTML = formatYER(sellPrice);
-        document.getElementById("ouncePrice").innerHTML = ounce.toFixed(2) + " $";
-        document.getElementById("gram24").innerHTML = formatYER(gram24YER);
-        document.getElementById("gram21").innerHTML = formatYER(gram21YER);
-        document.getElementById("gram18").innerHTML = formatYER(gram18YER);
-
-        const analysis = analyzeMarket(ounce);
-        const signalText = document.getElementById("signalText");
-        signalText.className = "signal-main " + analysis.signalClass;
-        signalText.textContent = analysis.signal;
-
-        document.getElementById("marketState").textContent = analysis.state;
-        document.getElementById("lastUpdate").textContent = "آخر تحديث: " + nowText();
-
-        if(lastSignal && lastSignal !== analysis.signal){
-            playAlert();
+        }catch{
+            render(lastOunce, "تعذر جلب السعر - آخر سعر محفوظ");
+            isUpdating = false;
+            return;
         }
 
-        if(lastOunce !== null){
-            const delta = ounce - lastOunce;
-            if(Math.abs(delta) >= 2){
-                playAlert();
+        // فحص التوقف
+        if(lastPriceCheck !== null){
+            if(Math.abs(price - lastPriceCheck) < 0.01){
+                freezeCount++;
+            }else{
+                freezeCount = 0;
             }
         }
 
-        lastSignal = analysis.signal;
-        lastOunce = ounce;
-        setSystemStatus("التحديث التلقائي يعمل");
+        lastPriceCheck = price;
 
-    }catch(error){
-        document.getElementById("buyPrice").innerHTML = "خطأ";
-        document.getElementById("sellPrice").innerHTML = "خطأ";
-        document.getElementById("ouncePrice").innerHTML = "خطأ";
-        document.getElementById("gram24").innerHTML = "خطأ";
-        document.getElementById("gram21").innerHTML = "خطأ";
-        document.getElementById("gram18").innerHTML = "خطأ";
+        // إذا السوق متوقف
+        if(freezeCount >= freezeLimit){
+            render(price, "⛔ السوق مغلق - تم إيقاف التحديث");
+            stopUpdates();
+            return;
+        }
 
-        const signalText = document.getElementById("signalText");
-        signalText.className = "signal-main signal-wait";
-        signalText.textContent = "تعذر التحليل";
-        document.getElementById("marketState").textContent = "حالة السوق: لا توجد بيانات";
-        document.getElementById("lastUpdate").textContent = "آخر تحديث: فشل";
-        setSystemStatus("فشل التحديث");
-    }finally{
-        isUpdating = false;
+        render(price, "التحديث يعمل");
+
+    }catch(err){
+        render(lastOunce, "خطأ - تم استخدام آخر سعر");
     }
+
+    isUpdating = false;
 }
 
+// تشغيل
 updateGold();
-setInterval(updateGold, autoUpdateMs);
+startUpdates(normalUpdateMs);
 </script>
 
 </body>
