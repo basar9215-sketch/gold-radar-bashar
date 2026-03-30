@@ -325,6 +325,7 @@ button:hover{
         </script>
     </div>
 </div>
+
 <script>
 const API_KEY = "8e666e473a5d4624a8f75219314f1a18";
 
@@ -333,19 +334,31 @@ const buyExtra = 0;
 const sellDiff = 4000;
 
 const normalUpdateMs = 30000;
-const slowUpdateMs = 60000;
-
 const strongMoveThreshold = 3;
-const freezeLimit = 6; // كم مرة ثابت = السوق مغلق
+const freezeLimit = 6;          // عدد مرات ثبات السعر = السوق مغلق
+const trapFreezeMs = 20000;     // مدة تجميد السعر وقت الفخ
+const afterTrapHoldMs = 10000;  // مدة تثبيت السعر اليمني بعد انتهاء الفخ
 
 let priceHistory = [];
 let isUpdating = false;
 let lastOunce = 4500;
-let lastSignal = "";
 let autoTimer = null;
 
 let freezeCount = 0;
 let lastPriceCheck = null;
+
+// خاص بالفخ
+let trapFreeze = false;
+let trapFreezeUntil = 0;
+let trapType = "";
+
+// تثبيت السعر اليمني
+let frozenY21 = null;
+let useFrozenAfter = false;
+
+function toggleTraderMode(){
+    document.body.classList.toggle("trader-mode");
+}
 
 function formatYER(num){
     return Math.round(num).toLocaleString("ar-YE") + " ريال";
@@ -371,6 +384,44 @@ function startUpdates(ms){
     autoTimer = setInterval(updateGold, ms);
 }
 
+function calcRSI(arr, len = 6){
+    if(arr.length < len + 1) return 50;
+
+    let gains = 0;
+    let losses = 0;
+
+    for(let i = arr.length - len; i < arr.length; i++){
+        const diff = arr[i] - arr[i - 1];
+        if(diff > 0) gains += diff;
+        else losses += Math.abs(diff);
+    }
+
+    if(losses === 0) return 100;
+
+    const rs = gains / losses;
+    return 100 - (100 / (1 + rs));
+}
+
+function detectTrap(newPrice){
+    const temp = [...priceHistory, newPrice];
+    if(temp.length < 5) return null;
+
+    const prev = temp[temp.length - 2];
+    const rsi = calcRSI(temp, 4);
+
+    // فخ علوي: تشبع شراء ثم انعكاس هابط
+    if(rsi >= 70 && newPrice < prev){
+        return "UP";
+    }
+
+    // فخ سفلي: تشبع بيع ثم انعكاس صاعد
+    if(rsi <= 30 && newPrice > prev){
+        return "DOWN";
+    }
+
+    return null;
+}
+
 function analyzeMarket(currentPrice){
     priceHistory.push(currentPrice);
 
@@ -382,7 +433,7 @@ function analyzeMarket(currentPrice){
         return { signal:"انتظر", cls:"signal-wait", state:"البيانات غير كافية" };
     }
 
-    const diff = priceHistory[priceHistory.length-1] - priceHistory[0];
+    const diff = priceHistory[priceHistory.length - 1] - priceHistory[0];
 
     if(diff >= strongMoveThreshold){
         return { signal:"🔴 بيع", cls:"signal-sell", state:"صاعد" };
@@ -412,7 +463,14 @@ function render(ounce, statusText){
     const g18 = g24 * 0.75;
 
     const y24 = g24 * yerRate;
-    const y21 = g21 * yerRate;
+    let y21;
+
+    if(trapFreeze || useFrozenAfter){
+        y21 = frozenY21 !== null ? frozenY21 : (g21 * yerRate);
+    }else{
+        y21 = g21 * yerRate;
+    }
+
     const y18 = g18 * yerRate;
 
     const buy = y21 + buyExtra;
@@ -425,15 +483,26 @@ function render(ounce, statusText){
     document.getElementById("gram21").innerHTML = formatYER(y21);
     document.getElementById("gram18").innerHTML = formatYER(y18);
 
-    const a = analyzeMarket(ounce);
-
     const el = document.getElementById("signalText");
-    el.className = "signal-main " + a.cls;
-    el.textContent = a.signal;
 
-    document.getElementById("marketState").textContent = "حالة السوق: " + a.state;
+    if(trapFreeze){
+        if(trapType === "UP"){
+            el.className = "signal-main signal-sell";
+            el.textContent = "🚨 فخ علوي";
+            document.getElementById("marketState").textContent = "حالة السوق: لا تشتري الآن";
+        }else{
+            el.className = "signal-main signal-buy";
+            el.textContent = "🚨 فخ سفلي";
+            document.getElementById("marketState").textContent = "حالة السوق: لا تبيع الآن";
+        }
+    }else{
+        const a = analyzeMarket(ounce);
+        el.className = "signal-main " + a.cls;
+        el.textContent = a.signal;
+        document.getElementById("marketState").textContent = "حالة السوق: " + a.state;
+    }
+
     document.getElementById("lastUpdate").textContent = "آخر تحديث: " + nowText();
-
     setStatus(statusText);
 }
 
@@ -442,19 +511,57 @@ async function updateGold(){
     isUpdating = true;
 
     try{
+        // أثناء الفخ: السعر ثابت
+        if(trapFreeze){
+            if(Date.now() < trapFreezeUntil){
+                render(lastOunce, trapType === "UP" ? "🚨 فخ علوي - تم تثبيت السعر" : "🚨 فخ سفلي - تم تثبيت السعر");
+                isUpdating = false;
+                return;
+            }else{
+                trapFreeze = false;
+
+                // بعد انتهاء الفخ: يثبت اليمني فقط لفترة قصيرة
+                useFrozenAfter = true;
+                setTimeout(() => {
+                    useFrozenAfter = false;
+                    frozenY21 = null;
+                }, afterTrapHoldMs);
+
+                trapType = "";
+            }
+        }
+
         let price;
 
         try{
             price = await fetchPrice();
-            lastOunce = price;
-
         }catch{
             render(lastOunce, "تعذر جلب السعر - آخر سعر محفوظ");
             isUpdating = false;
             return;
         }
 
-        // فحص التوقف
+        // كشف الفخ قبل اعتماد السعر الجديد
+        const trap = detectTrap(price);
+        if(trap){
+            const g24 = lastOunce / 31.1035;
+            const g21 = g24 * 0.875;
+
+            // تثبيت اليمني وقت الفخ
+            frozenY21 = g21 * yerRate;
+
+            trapFreeze = true;
+            trapType = trap;
+            trapFreezeUntil = Date.now() + trapFreezeMs;
+
+            render(lastOunce, trap === "UP" ? "🚨 فخ علوي - تم تثبيت السعر" : "🚨 فخ سفلي - تم تثبيت السعر");
+            isUpdating = false;
+            return;
+        }
+
+        lastOunce = price;
+
+        // فحص السوق المغلق
         if(lastPriceCheck !== null){
             if(Math.abs(price - lastPriceCheck) < 0.01){
                 freezeCount++;
@@ -465,10 +572,10 @@ async function updateGold(){
 
         lastPriceCheck = price;
 
-        // إذا السوق متوقف
         if(freezeCount >= freezeLimit){
             render(price, "⛔ السوق مغلق - تم إيقاف التحديث");
             stopUpdates();
+            isUpdating = false;
             return;
         }
 
@@ -481,7 +588,6 @@ async function updateGold(){
     isUpdating = false;
 }
 
-// تشغيل
 updateGold();
 startUpdates(normalUpdateMs);
 </script>
